@@ -11,7 +11,7 @@ import (
 type Broker struct {
 	exchange chan Msg
 
-	sync.RWMutex
+	rwm    sync.RWMutex
 	queues map[chan Msg]struct{}
 
 	enqueues chan chan Msg
@@ -111,22 +111,22 @@ func (b *Broker) Close() {
 }
 
 func (b *Broker) queuesNum() int {
-	b.RLock()
-	defer b.RUnlock()
+	b.rwm.RLock()
+	defer b.rwm.RUnlock()
 
 	return len(b.queues)
 }
 
 func (b *Broker) add(queue chan Msg) {
-	b.Lock()
-	defer b.Unlock()
+	b.rwm.Lock()
+	defer b.rwm.Unlock()
 
 	b.queues[queue] = struct{}{}
 }
 
 func (b *Broker) remove(queue chan Msg) {
-	b.Lock()
-	defer b.Unlock()
+	b.rwm.Lock()
+	defer b.rwm.Unlock()
 
 	delete(b.queues, queue)
 	close(queue)
