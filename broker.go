@@ -88,19 +88,17 @@ func (b *Broker) Pub(msg Msg) {
 // 从queue中消费消息
 // 使用cancel取消消费
 func (b *Broker) Consume(prefetchCount int) (queue <-chan Msg, cancel func()) {
-	var q chan Msg
-	if prefetchCount <= 0 {
-		q = make(chan Msg)
-	} else {
-		q = make(chan Msg, prefetchCount)
+	if prefetchCount < 0 {
+		prefetchCount = 0
 	}
+	q := make(chan Msg, prefetchCount)
+	b.enqueues <- q
 	cancel = func() {
 		select {
 		case b.dequeues <- q:
 		case <-b.done:
 		}
 	}
-	b.enqueues <- q
 
 	return q, cancel
 }
