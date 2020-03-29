@@ -18,6 +18,8 @@ type Broker struct {
 	dequeues chan chan Msg
 
 	done chan struct{}
+
+	debug bool
 }
 
 // Msg 单独给要发布的消息类型取个别名, 方便修改要发布的消息类型
@@ -49,18 +51,17 @@ func (b *Broker) start() {
 				for queue := range b.queues {
 					select {
 					case queue <- msg:
-						debugf("消息已发布至queue")
 					default:
 					}
 				}
 			case queue := <-b.enqueues:
 				b.add(queue)
-				log.Printf("已发起消费[consumer: %d]", b.queuesNum())
+				b.debugf("已发起消费[consumer: %d]", b.queuesNum())
 			case queue := <-b.dequeues:
 				b.remove(queue)
-				log.Printf("已取消消费[consumer: %d]", b.queuesNum())
+				b.debugf("已取消消费[consumer: %d]", b.queuesNum())
 			case <-b.done:
-				log.Println("停用broker")
+				b.debugf("停用broker")
 				return
 			}
 		}
@@ -70,16 +71,14 @@ func (b *Broker) start() {
 // Pub 发布消息
 func (b *Broker) Pub(msg Msg) {
 	if b.queuesNum() == 0 {
-		debugf("无消费者等待消息")
+		b.debugf("无消费者")
 		return
 	}
 
 	select {
 	case b.exchange <- msg:
-		debugf("已发布消息至exchange")
 	case <-b.done:
-		log.Println("broker已停用,无法发送")
-		return
+		b.debugf("broker已被关闭, 无法发布消息")
 	}
 }
 
@@ -108,6 +107,16 @@ func (b *Broker) Close() {
 	close(b.done)
 }
 
+// Done
+func (b *Broker) Done() <-chan struct{} {
+	return b.done
+}
+
+// Debug 开启debug模式, 打印debug日志
+func (b *Broker) Debug() {
+	b.debug = true
+}
+
 func (b *Broker) queuesNum() int {
 	b.rwm.RLock()
 	defer b.rwm.RUnlock()
@@ -130,6 +139,9 @@ func (b *Broker) remove(queue chan Msg) {
 	close(queue)
 }
 
-func (b *Broker) Done() <-chan struct{} {
-	return b.done
+func (b *Broker) debugf(format string, a ...interface{}) {
+	if !b.debug {
+		return
+	}
+	log.Printf(format, a...)
 }
