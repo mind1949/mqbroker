@@ -61,6 +61,9 @@ func (b *Broker) start() {
 				b.remove(queue)
 				b.debugf("已取消消费[consumer: %d]", b.queuesNum())
 			case <-b.done:
+				for queue := range b.queues {
+					b.remove(queue)
+				}
 				b.debugf("停用broker")
 				return
 			}

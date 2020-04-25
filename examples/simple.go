@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"strconv"
-	"sync"
 	"time"
 
 	"github.com/mind1949/mqbroker"
@@ -25,27 +24,17 @@ func main() {
 	}()
 
 	// 消费消息
-	var (
-		wg    sync.WaitGroup
-		count = 5
-	)
-	wg.Add(count)
 	consume := func(consumer string) {
-		defer wg.Done()
 		queue, cancel := b.Consume(10)
 		defer cancel()
-		for {
-			select {
-			case msg := <-queue:
-				log.Printf("%s receive %s", consumer, msg)
-			case <-b.Done():
-				return
-			}
+		for msg := range queue {
+			log.Printf("%s receives %s", consumer, msg)
 		}
 	}
-	for i := 0; i < count; i++ {
+	for i := 0; i < 5; i++ {
 		name := "consumer" + strconv.Itoa(i+1)
 		go consume(name)
 	}
-	wg.Wait()
+
+	<- b.Done()
 }
