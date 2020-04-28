@@ -1,3 +1,4 @@
+// Package mqbroker is a simple message broadcaster.
 package mqbroker
 
 import (
@@ -6,8 +7,8 @@ import (
 	"log"
 )
 
-// Broker 消息发布中间件
-// 用于发布、订阅、取消订阅消息
+// Broker is a message publishing middleware.
+// Used to publish, subscribe, and unsubscribe messages.
 type Broker struct {
 	exchange chan Msg
 
@@ -22,11 +23,10 @@ type Broker struct {
 	debug bool
 }
 
-// Msg 单独给要发布的消息类型取个别名, 方便修改要发布的消息类型
-// 例如要改为发布A类型消息, 只要修改为type Msg = A
+// Msg is []byte's alias.
 type Msg = []byte
 
-// NewBroker
+// NewBroker ceates a new Broker.
 func NewBroker() *Broker {
 	broker := &Broker{
 		exchange: make(chan Msg),
@@ -42,7 +42,7 @@ func NewBroker() *Broker {
 	return broker
 }
 
-// start 启动Brocker
+// start starts Broker.
 func (b *Broker) start() {
 	for {
 		select {
@@ -69,7 +69,7 @@ func (b *Broker) start() {
 	}
 }
 
-// Pub 发布消息
+// Pub publishes msg.
 func (b *Broker) Pub(msg Msg) {
 	if b.queuesNum() == 0 {
 		b.debugf("无消费者")
@@ -83,10 +83,11 @@ func (b *Broker) Pub(msg Msg) {
 	}
 }
 
-// Consume 消费消息
-// prefetchCount 指定可以预先消费的消息数量
-// 从queue中消费消息
-// 使用cancel取消消费
+// Consume comsumes messages.
+// With prefetchCount greater than zero, the Broker will publish that
+// many messages to queue before message is consumered.
+// consume messages from queue.
+// cancel cancels consumptions.
 func (b *Broker) Consume(prefetchCount int) (queue <-chan Msg, cancel func()) {
 	if prefetchCount < 0 {
 		prefetchCount = 0
@@ -103,17 +104,17 @@ func (b *Broker) Consume(prefetchCount int) (queue <-chan Msg, cancel func()) {
 	return q, cancel
 }
 
-// Close 发送关闭broker信号
+// Close closes Broker.
 func (b *Broker) Close() {
 	close(b.done)
 }
 
-// Done
+// Done returns done channel.
 func (b *Broker) Done() <-chan struct{} {
 	return b.done
 }
 
-// Debug 开启debug模式, 打印debug日志
+// Debug starts debug mode.
 func (b *Broker) Debug() {
 	b.debug = true
 }
