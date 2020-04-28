@@ -36,5 +36,5 @@ func main() {
 		go consume(name)
 	}
 
-	<- b.Done()
+	<-b.Done()
 }

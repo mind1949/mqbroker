@@ -37,38 +37,36 @@ func NewBroker() *Broker {
 
 		done: make(chan struct{}),
 	}
-	broker.start()
+	go broker.start()
 
 	return broker
 }
 
 // start 启动Brocker
 func (b *Broker) start() {
-	go func() {
-		for {
-			select {
-			case msg := <-b.exchange:
-				for queue := range b.queues {
-					select {
-					case queue <- msg:
-					default:
-					}
+	for {
+		select {
+		case msg := <-b.exchange:
+			for queue := range b.queues {
+				select {
+				case queue <- msg:
+				default:
 				}
-			case queue := <-b.enqueues:
-				b.add(queue)
-				b.debugf("已发起消费[consumer: %d]", b.queuesNum())
-			case queue := <-b.dequeues:
-				b.remove(queue)
-				b.debugf("已取消消费[consumer: %d]", b.queuesNum())
-			case <-b.done:
-				for queue := range b.queues {
-					b.remove(queue)
-				}
-				b.debugf("停用broker")
-				return
 			}
+		case queue := <-b.enqueues:
+			b.add(queue)
+			b.debugf("已发起消费[consumer: %d]", b.queuesNum())
+		case queue := <-b.dequeues:
+			b.remove(queue)
+			b.debugf("已取消消费[consumer: %d]", b.queuesNum())
+		case <-b.done:
+			for queue := range b.queues {
+				b.remove(queue)
+			}
+			b.debugf("停用broker")
+			return
 		}
-	}()
+	}
 }
 
 // Pub 发布消息
