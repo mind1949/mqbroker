@@ -85,7 +85,7 @@ func (b *Broker) Pub(msg Msg) {
 
 // Consume comsumes messages.
 // With prefetchCount greater than zero, the Broker will publish that
-// many messages to queue before message is consumered.
+// many messages to queue before message is consumed.
 // consume messages from queue.
 // cancel cancels consumptions.
 func (b *Broker) Consume(prefetchCount int) (queue <-chan Msg, cancel func()) {
