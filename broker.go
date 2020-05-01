@@ -26,7 +26,7 @@ type Broker struct {
 // Msg is []byte's alias.
 type Msg = []byte
 
-// NewBroker ceates a new Broker.
+// NewBroker creates a new Broker.
 func NewBroker() *Broker {
 	broker := &Broker{
 		exchange: make(chan Msg),
@@ -51,19 +51,20 @@ func (b *Broker) start() {
 				select {
 				case queue <- msg:
 				default:
+					b.debugf("queue is blocked")
 				}
 			}
 		case queue := <-b.enqueues:
 			b.add(queue)
-			b.debugf("已发起消费[consumer: %d]", b.queuesNum())
+			b.debugf("consumer[%d] + 1", b.queuesNum()-1)
 		case queue := <-b.dequeues:
 			b.remove(queue)
-			b.debugf("已取消消费[consumer: %d]", b.queuesNum())
+			b.debugf("consumer[%d] - 1", b.queuesNum()+1)
 		case <-b.done:
 			for queue := range b.queues {
 				b.remove(queue)
 			}
-			b.debugf("停用broker")
+			b.debugf("close broker")
 			return
 		}
 	}
@@ -72,14 +73,14 @@ func (b *Broker) start() {
 // Pub publishes msg.
 func (b *Broker) Pub(msg Msg) {
 	if b.queuesNum() == 0 {
-		b.debugf("无消费者")
+		b.debugf("no consumber")
 		return
 	}
 
 	select {
 	case b.exchange <- msg:
 	case <-b.done:
-		b.debugf("broker已被关闭, 无法发布消息")
+		b.debugf("the borker is closed and no message can be puhlished")
 	}
 }
 
