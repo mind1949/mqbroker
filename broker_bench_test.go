@@ -3,25 +3,25 @@ package mqbroker
 import "testing"
 
 func BenchmarkConsumer1(b *testing.B) {
-	benchmarkConsumer(1, b)
+	benchmarkConsumer(b, 1)
 }
 
 func BenchmarkConsumer100(b *testing.B) {
-	benchmarkConsumer(100, b)
+	benchmarkConsumer(b, 100)
 }
 
 func BenchmarkConsumer10000(b *testing.B) {
-	benchmarkConsumer(10000, b)
+	benchmarkConsumer(b, 10000)
 }
 
 func BenchmarkConsumer100000(b *testing.B) {
-	benchmarkConsumer(100000, b)
+	benchmarkConsumer(b, 100000)
 }
 
-func benchmarkConsumer(num int, b *testing.B) {
+func benchmarkConsumer(b *testing.B, size int) {
 	bk := NewBroker()
 	defer bk.Close()
-	for i := 0; i < num; i++ {
+	for i := 0; i < size; i++ {
 		go func() {
 			queue, cancel := bk.Consume(200)
 			defer cancel()
